@@ -1,4 +1,4 @@
-<h1>Student Management System-Bash</h1>
+<h1>Student Management System-Bash Scripting</h1>
 <hr><p>A simple command-line Student Management System for efficiently handling student records, grades, and reports. Designed for easy use and data persistence.</p><ul>
 <li>The Student Management System (SMS) addresses the inefficiencies in manual student record management by:</li>
 </ul>
