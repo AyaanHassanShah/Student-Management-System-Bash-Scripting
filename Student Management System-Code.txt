@@ -1,0 +1,792 @@
+#!/bin/bash
+
+RollNumber=""
+
+#----------------------------------------- INPUT ROLL NUMBER ----------------------------------------------------------
+function InputRollNo()
+{
+    read -p "Enter the Roll-No of student: " RollNumber
+}
+
+#-------------------------------------------- ADD STUDENT --------------------------------------------------------------
+function AddStudent()
+{
+    local counter=1
+    while [ "$counter" -eq 1 ]; do
+        echo "Do you want to add a student?"
+        read -p "Choose Y or N: " choice
+
+        if [[ "$choice" == "Y" || "$choice" == "y" ]]; then
+            while true; do
+                read -p "Enter the Name of Student: " Name
+                if [[ $Name =~ ^[a-zA-Z]+(\ [a-zA-Z]+)*$ ]]; then
+                    break
+                else
+                    echo "Invalid Name!! Try again"
+                fi
+            done
+
+            while true; do
+                read -p "Enter the Roll-No of student: " Roll_No
+                if [[ $Roll_No =~ ^[0-9]{2}[A-Z]-[0-9]{4}$ ]]; then
+                    if ! grep -q "| $Roll_No |" Students.txt; then
+                        break
+                    else
+                        echo "Roll Number Already Exists"
+                    fi
+                else
+                    echo "Invalid Roll Number!! Specified Syntax(xxF-xxxx)"
+                fi
+            done
+
+            while true; do
+                read -p "Enter the Email of the Student: " Email
+                if [[ $Email =~ ^[a-zA-Z0-9._%+-]+@cfd\.nu\.edu\.pk$ ]]; then
+                    break
+                else
+                    echo "Please Enter a Valid Email (Roll_No@cfd.nu.edu.pk)"
+                fi
+            done
+
+            while true; do
+                read -p "Enter the Contact of the Student: " Contact
+                if [[ $Contact =~ ^[0-9]{11}$ ]]; then
+                    if ! grep -q "| $Contact |" Students.txt; then
+                        break
+                    else
+                        echo "This Contact already exists. Try again."
+                    fi
+                else
+                    echo "Invalid Contact! Must have 11 digits (0-9). Try again."
+                fi
+            done
+
+            echo "Verify the Information Entered Before Proceeding "
+            echo "---------------------------------------------"
+            echo "Student's Information: "
+            echo "Name: $Name | Roll-No: $Roll_No | Email: $Email | Contact #: $Contact | "
+
+            while true; do
+                read -p "Choose Y if confirmed or N if not: " option
+                if [[ "$option" == "Y" || "$option" == "y" ]]; then
+                    echo "$Name | $Roll_No | $Email | $Contact | " >> Students.txt
+                    echo "Record Successfully Added"
+                    break
+                elif [[ "$option" == "N" || "$option" == "n" ]]; then
+                    echo "Record not added..."
+                    break
+                else
+                    echo "Invalid option....Try again"
+                fi
+            done
+        elif [[ "$choice" == "N" || "$choice" == "n" ]]; then
+            echo "Exiting...........";
+            counter=0
+        else
+            echo "Invalid Option"
+        fi
+    done
+}
+
+#-------------------------------------------- ADD COURSES ---------------------------------------------------------------
+function AddCoursesForStudent()
+ {
+    read -p "Enter the Roll-No of student: " RollNumber
+    if grep -q "| $RollNumber |" Students.txt; then
+        CurrentCourses=$(grep "| $RollNumber |" Students.txt | awk -F'|' '{print $NF}')
+        CurrentCourses=$(echo "$CurrentCourses" | sed 's/^ *//;s/ *$//')
+
+        echo "Enter courses one by one. Type 'done' when finished."
+        UpdatedCourses=""
+        while true; do
+            read -p "Enter Course: " Course
+            if [[ "$Course" == "done" ]]; then
+                break
+            fi
+            read -p "Enter Credit Hours for $Course: " CreditHours
+            if [[ "$CreditHours" =~ ^[1-4]$ ]]; then
+                if [[ -z "$UpdatedCourses" ]]; then
+                    UpdatedCourses="$Course{$CreditHours}"
+                else
+                    UpdatedCourses="$UpdatedCourses - $Course{$CreditHours}"
+                fi
+            else
+                echo "Invalid credit hours. Must be between 1-4."
+            fi
+        done
+
+        if [[ -z "$CurrentCourses" || "$CurrentCourses" == "|" ]]; then
+            UpdatedCourses="$UpdatedCourses |"
+        else
+            UpdatedCourses="$CurrentCourses - $UpdatedCourses |"
+        fi
+
+        sed -i "/| $RollNumber |/s/|[^|]*$/| $UpdatedCourses/" Students.txt
+        echo "Courses Added Successfully"
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+    read -p "Press Enter to continue..."
+}
+
+#------------------------------------------------- ASSIGN MARKS ---------------------------------------------------------------
+function AssignMarksForStudent()
+{
+    clear
+    read -p "Enter the Roll-No of student: " RollNumber
+
+    if grep -q "| $RollNumber |" Students.txt; then
+        CurrentRecord=$(grep "| $RollNumber |" Students.txt)
+        echo "Student found!"
+
+        # Extract courses correctly - get the last field and remove trailing spaces and |
+        Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $5}' | sed 's/^ *//;s/ *|*$//')
+
+        if [[ -z "$Courses" ]]; then
+            echo "No courses found for this student. Please add courses first."
+            read -p "Press Enter to continue..."
+            return
+        fi
+
+        echo "Current courses: $Courses"
+        UpdatedCourses=""
+
+        # Split courses by hyphen
+        IFS='-' read -ra CourseArray <<< "$Courses"
+
+        for Course in "${CourseArray[@]}"; do
+            # Clean up the course name
+            Course=$(echo "$Course" | sed 's/^ *//;s/ *$//')
+
+            # Skip empty entries
+            if [[ -z "$Course" ]]; then
+                continue
+            fi
+
+            # Extract course name and credit hours (remove any existing marks)
+            if [[ "$Course" =~ \{([0-9])\} ]]; then
+                CreditHours=$(echo "$Course" | grep -o '{[^}]*}' | tr -d '{}')
+                CourseName=$(echo "$Course" | sed 's/{.*}//g' | sed 's/(.*)//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
+            else
+                CourseName=$(echo "$Course" | sed 's/(.*)//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
+                CreditHours=""
+            fi
+
+            echo "Enter marks for: $CourseName"
+            read -p "Marks: " Marks
+
+            # Add to updated courses
+            if [[ -z "$UpdatedCourses" ]]; then
+                if [[ -n "$CreditHours" ]]; then
+                    UpdatedCourses="$CourseName{$CreditHours}($Marks)"
+                else
+                    UpdatedCourses="$CourseName($Marks)"
+                fi
+            else
+                if [[ -n "$CreditHours" ]]; then
+                    UpdatedCourses="$UpdatedCourses - $CourseName{$CreditHours}($Marks)"
+                else
+                    UpdatedCourses="$UpdatedCourses - $CourseName($Marks)"
+                fi
+            fi
+        done
+
+        # Update the file with new marks
+        sed -i "/| $RollNumber |/s/|[^|]*$/| $UpdatedCourses |/" Students.txt
+        echo "Marks assigned successfully!"
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+
+    read -p "Press Enter to continue..."
+}
+
+#---------------------------------------------- CALCULATING GRADES ---------------------------------------------------------
+function CalculateGrades()
+{
+    clear
+    InputRollNo
+
+    if grep -q "| $RollNumber |" Students.txt; then
+        CurrentRecord=$(grep "| $RollNumber |" Students.txt)
+        Name=$(echo "$CurrentRecord" | awk -F'|' '{print $1}' | sed 's/^ *//;s/ *$//')
+        Email=$(echo "$CurrentRecord" | awk -F'|' '{print $3}' | sed 's/^ *//;s/ *$//')
+        Contact=$(echo "$CurrentRecord" | awk -F'|' '{print $4}' | sed 's/^ *//;s/ *$//')
+        Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $6}' | sed 's/^ *//;s/ *|*$//')
+
+        if [[ -z "$Courses" ]]; then
+            echo "No courses found for this student."
+            read -p "Press Enter to continue..."
+            return
+        fi
+
+        UpdatedCourses=""
+        IFS='-' read -ra CourseArray <<< "$Courses"
+
+        for Course in "${CourseArray[@]}"; do
+            Course=$(echo "$Course" | sed 's/^ *//;s/ *$//')
+
+            if [[ -z "$Course" ]]; then
+                continue
+            fi
+
+            # Extract course name, credit hours and marks
+            CreditHours=""
+            if [[ "$Course" =~ \{([0-9])\} ]]; then
+                CreditHours=$(echo "$Course" | grep -o '{[^}]*}' | tr -d '{}')
+            fi
+
+            if [[ "$Course" =~ \((.*)\) ]]; then
+                CourseName=$(echo "$Course" | sed 's/(.*)//g' | sed 's/{.*}//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
+                Marks=$(echo "$Course" | grep -o '([^)]*)' | tr -d '()')
+
+                # Assign Grade based on Marks
+                if [[ $Marks -ge 90 ]]; then
+                    Grade='A+'
+                    GradeValue=4.0
+                elif [[ $Marks -ge 80 ]]; then
+                    Grade='A'
+                    GradeValue=4.0
+                elif [[ $Marks -ge 70 ]]; then
+                    Grade='B'
+                    GradeValue=3.0
+                elif [[ $Marks -ge 60 ]]; then
+                    Grade='C'
+                    GradeValue=2.0
+                elif [[ $Marks -ge 50 ]]; then
+                    Grade='D'
+                    GradeValue=1.0
+                else
+                    Grade='F'
+                    GradeValue=0.0
+                fi
+
+                # Append course with grade
+                if [[ -z "$UpdatedCourses" ]]; then
+                    if [[ -n "$CreditHours" ]]; then
+                        UpdatedCourses="$CourseName{$CreditHours}($Marks)[$Grade]"
+                    else
+                        UpdatedCourses="$CourseName($Marks)[$Grade]"
+                    fi
+                else
+                    if [[ -n "$CreditHours" ]]; then
+                        UpdatedCourses="$UpdatedCourses - $CourseName{$CreditHours}($Marks)[$Grade]"
+                    else
+                        UpdatedCourses="$UpdatedCourses - $CourseName($Marks)[$Grade]"
+                    fi
+                fi
+            else
+                # No marks found
+                if [[ -z "$UpdatedCourses" ]]; then
+                    UpdatedCourses="$Course"
+                else
+                    UpdatedCourses="$UpdatedCourses - $Course"
+                fi
+            fi
+        done
+
+        # Update the file
+        sed -i "/| $RollNumber |/s/|[^|]*$/| $UpdatedCourses |/" Students.txt
+        echo "Grades calculated and updated successfully!"
+        echo "Run Calculate CGPA option to compute the cumulative GPA."
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+    read -p "Press Enter to continue..."
+}
+
+#--------------------------------------------- CALCULATING CGPA ---------------------------------------------------------
+function CalculateCGPA()
+{
+    clear
+    InputRollNo
+
+    if grep -q "| $RollNumber |" Students.txt; then
+        CurrentRecord=$(grep "| $RollNumber |" Students.txt)
+        Name=$(echo "$CurrentRecord" | awk -F'|' '{print $1}' | sed 's/^ *//;s/ *$//')
+        Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $7}' | sed 's/^ *//;s/ *|*$//')
+
+        if [[ -z "$Courses" ]]; then
+            echo "No courses found for this student."
+            read -p "Press Enter to continue..."
+            return
+        fi
+
+        # Variables for CGPA calculation
+        TotalCreditHours=0
+        WeightedGradeSum=0
+
+        echo "CGPA Calculation for $Name ($RollNumber):"
+        echo "----------------------------------------"
+        printf "%-20s %-8s %-8s %-8s\n" "Course" "Grade" "Credits" "Points"
+        echo "----------------------------------------"
+
+        IFS='-' read -ra CourseArray <<< "$Courses"
+
+        for Course in "${CourseArray[@]}"; do
+            Course=$(echo "$Course" | sed 's/^ *//;s/ *$//')
+
+            if [[ -z "$Course" ]]; then
+                continue
+            fi
+
+            # Extract credit hours
+            CreditHours=3  # Default if not specified
+            if [[ "$Course" =~ \{([0-9])\} ]]; then
+                CreditHours=$(echo "$Course" | grep -o '{[^}]*}' | tr -d '{}')
+            fi
+
+            # Extract course name and grade
+            CourseName=$(echo "$Course" | sed 's/(.*)//g' | sed 's/{.*}//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
+
+            # Check if course has a grade
+            if [[ "$Course" =~ \[(.*)\] ]]; then
+                Grade=$(echo "$Course" | grep -o '\[[^]]*\]' | tr -d '[]')
+
+                # Assign grade value
+                case $Grade in
+                    "A+") GradeValue=4.0 ;;
+                    "A")  GradeValue=4.0 ;;
+                    "B")  GradeValue=3.0 ;;
+                    "C")  GradeValue=2.0 ;;
+                    "D")  GradeValue=1.0 ;;
+                    "F")  GradeValue=0.0 ;;
+                    *)    GradeValue=0.0 ;;
+                esac
+
+                # Calculate weighted grade
+                CoursePoints=$(echo "$CreditHours * $GradeValue" | bc -l)
+
+                # Add to totals
+                TotalCreditHours=$((TotalCreditHours + CreditHours))
+                WeightedGradeSum=$(echo "$WeightedGradeSum + $CoursePoints" | bc -l)
+
+                # Display course details
+                printf "%-20s %-8s %-8s %-8.2f\n" "$CourseName" "$Grade" "$CreditHours" "$CoursePoints"
+            fi
+        done
+
+        echo "----------------------------------------"
+
+        # Calculate CGPA
+        if [[ $TotalCreditHours -eq 0 ]]; then
+            echo "No graded courses found."
+            read -p "Press Enter to continue..."
+            return
+        fi
+
+        CGPA=$(echo "scale=2; $WeightedGradeSum / $TotalCreditHours" | bc -l)
+
+        echo "Total Credit Hours: $TotalCreditHours"
+        echo "CGPA: $CGPA"
+
+        # Update file with CGPA
+        # First check if record already has CGPA
+        if grep -q "| $RollNumber | CGPA:" Students.txt; then
+            # Update existing CGPA
+            sed -i "/| $RollNumber |/ s/CGPA:[0-9]\+\.[0-9]\+/CGPA:$CGPA/" Students.txt
+        else
+            # Add CGPA to record
+            sed -i "/| $RollNumber |/ s/|/ | CGPA:$CGPA |/" Students.txt
+        fi
+
+        echo "CGPA updated in student record."
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+    read -p "Press Enter to continue..."
+}
+
+#--------------------------------------------- DELETE A RECORD ---------------------------------------------------
+function DeleteRecord()
+{
+    clear
+    InputRollNo
+    if grep -q "| $RollNumber |" Students.txt; then
+        sed -i "/| $RollNumber |/d" Students.txt
+        echo "Record Deleted Successfully"
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+    read -p "Press Enter to continue..."
+}
+
+#---------------------------------------------- LIST OF PASSED STUDENTS ------------------------------------------
+function ListPassedStudents()
+{
+    clear
+    echo "List of Passed Students:"
+    echo "-----------------------"
+    local count=0
+
+    while IFS= read -r line; do
+        # Skip empty lines
+        if [[ -z "$line" ]]; then
+            continue
+        fi
+
+        # Parse record fields
+        Name=$(echo "$line" | awk -F'|' '{print $1}' | sed 's/^ *//;s/ *$//')
+        RollNo=$(echo "$line" | awk -F'|' '{print $2}' | sed 's/^ *//;s/ *$//')
+        Courses=$(echo "$line" | awk -F'|' '{print $5}' | sed 's/^ *//;s/ *|*$//')
+
+        # Skip if no courses or grades
+        if [[ -z "$Courses" ]]; then
+            continue
+        fi
+
+        Failed=0
+        IFS='-' read -ra CourseArray <<< "$Courses"
+
+        for Course in "${CourseArray[@]}"; do
+            Course=$(echo "$Course" | sed 's/^ *//;s/ *$//')
+
+            # Check if course has a grade in square brackets
+            if [[ "$Course" =~ \[(.*)\] ]]; then
+                Grade=$(echo "$Course" | grep -o '\[[^]]*\]' | tr -d '[]')
+
+                if [[ "$Grade" == "F" ]]; then
+                    Failed=1
+                    break
+                fi
+            fi
+        done
+
+        if [[ $Failed -eq 0 ]]; then
+            # Extract CGPA if available
+            CGPA=""
+            if [[ "$line" =~ CGPA:([0-9]+\.[0-9]+) ]]; then
+                CGPA=${BASH_REMATCH[1]}
+                echo "$RollNo - $Name (CGPA: $CGPA)"
+            else
+                echo "$RollNo - $Name"
+            fi
+            ((count++))
+        fi
+    done < Students.txt
+
+    if [[ $count -eq 0 ]]; then
+        echo "No students passed all courses."
+    fi
+
+    read -p "Press Enter to continue..."
+}
+
+#-------------------------------------------- LIST OF FAILED STUDENTS ---------------------------------------------
+function ListFailedStudents()
+{
+    clear
+    echo "List of Failed Students:"
+    echo "-----------------------"
+    local count=0
+
+    while IFS= read -r line; do
+        # Skip empty lines
+        if [[ -z "$line" ]]; then
+            continue
+        fi
+
+        # Parse record fields
+        Name=$(echo "$line" | awk -F'|' '{print $1}' | sed 's/^ *//;s/ *$//')
+        RollNo=$(echo "$line" | awk -F'|' '{print $2}' | sed 's/^ *//;s/ *$//')
+        Courses=$(echo "$line" | awk -F'|' '{print $5}' | sed 's/^ *//;s/ *|*$//')
+
+        # Skip if no courses or grades
+        if [[ -z "$Courses" ]]; then
+            continue
+        fi
+
+        Failed=0
+        IFS='-' read -ra CourseArray <<< "$Courses"
+
+        for Course in "${CourseArray[@]}"; do
+            Course=$(echo "$Course" | sed 's/^ *//;s/ *$//')
+
+            # Check if course has a grade in square brackets
+            if [[ "$Course" =~ \[(.*)\] ]]; then
+                Grade=$(echo "$Course" | grep -o '\[[^]]*\]' | tr -d '[]')
+
+                if [[ "$Grade" == "F" ]]; then
+                    Failed=1
+                    break
+                fi
+            fi
+        done
+
+        if [[ $Failed -eq 1 ]]; then
+            # Extract CGPA if available
+        local CGPA=""
+            if [[ "$line" =~ CGPA:([0-9]+\.[0-9]+) ]]; then
+                CGPA=${BASH_REMATCH[1]}
+                 if [[ "$CGPA" -lt 2 ]]; then
+                echo "$RollNo - $Name (CGPA: $CGPA)"
+                 fi
+            else
+                echo "$RollNo - $Name"
+            fi
+            ((count++))
+         fi;
+    done < Students.txt
+
+    if [[ $count -lt 1 ]]; then
+        echo "No students failed any courses."
+    fi
+
+    read -p "Press Enter to continue..."
+}
+
+#--------------------------------------- LIST IN ASCENDING ORDER -------------------------------------------------
+function ListStudentAscending()
+{
+    clear
+    echo "Students Listed in Ascending Order by CGPA:"
+    echo "-----------------------------------------"
+
+    sort -t'|' -k2 Students.txt | while IFS= read -r line; do
+        Name=$(echo "$line" | awk -F'|' '{print $1}' | sed 's/^ *//;s/ *$//')
+        RollNo=$(echo "$line" | awk -F'|' '{print $3}' | sed 's/^ *//;s/ *$//')
+        # Extract CGPA if available
+        CGPA=""
+        if [[ "$line" =~ CGPA:([0-9]+\.[0-9]+) ]]; then
+            CGPA=${BASH_REMATCH[1]}
+            echo "$Name - $RollNo (CGPA: $CGPA)"
+        else
+            echo "$Name - $RollNo"
+        fi
+    done
+
+    read -p "Press Enter to continue..."
+}
+
+#------------------------------------------- LIST IN DESCENDING ORDER --------------------------------------------
+function ListStudentDescending()
+{
+    clear
+    echo "Students Listed in Descending Order by CGPA:"
+    echo "------------------------------------------"
+
+    sort -t'|' -r -k2 Students.txt | while IFS= read -r line; do
+        Name=$(echo "$line" | awk -F'|' '{print $1}' | sed 's/^ *//;s/ *$//')
+        RollNo=$(echo "$line" | awk -F'|' '{print $3}' | sed 's/^ *//;s/ *$//')
+        # Extract CGPA if available
+        CGPA=""
+        if [[ "$line" =~ CGPA:([0-9]+\.[0-9]+) ]]; then
+            CGPA=${BASH_REMATCH[1]}
+            echo "$Name - $RollNo (CGPA: $CGPA)"
+        else
+            echo "$Name - $RollNo"
+        fi
+    done
+
+    read -p "Press Enter to continue..."
+}
+
+#---------------------------------------------- DISPLAY CGPA -----------------------------------------------------------
+function DisplayCGPA()
+{
+    clear
+    if [[ Login_User ]]; then
+
+
+    if grep -q "| $RollNumber |" Students.txt; then
+        CurrentRecord=$(grep "| $RollNumber |" Students.txt)
+
+        if [[ "$CurrentRecord" =~ CGPA:([0-9]+\.[0-9]+) ]]; then
+            CGPA="${BASH_REMATCH[1]}"
+            echo "----------------------------------------"
+            echo " Roll Number: $RollNumber"
+            echo " CGPA: $CGPA"
+            echo "----------------------------------------"
+        else
+            echo "CGPA not found for Roll Number: $RollNumber"
+        fi
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+    read -p "Press Enter to continue..."
+ fi
+
+}
+
+
+#------------------------------------------ DISPLAY COURSE AND GRADES ---------------------------------------------
+function DisplayCoursesAndGrades()
+{
+ clear
+    if [[ Login_User ]]; then
+
+    if grep -q "| $RollNumber |" Students.txt; then
+        CurrentRecord=$(grep "| $RollNumber |" Students.txt)
+        Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $8}' | sed 's/^ *//;s/ *|*$//')
+
+        if [[ -z "$Courses" ]]; then
+            echo "No courses found for this student."
+            read -p "Press Enter to continue..."
+            return
+        fi
+
+        echo "----------------------------------------"
+        printf "%-20s %-8s %-8s\n" "Course" "Grade" "Credits"
+        echo "----------------------------------------"
+
+        IFS='-' read -ra CourseArray <<< "$Courses"
+
+        for Course in "${CourseArray[@]}"; do
+            Course=$(echo "$Course" | sed 's/^ *//;s/ *$//')
+
+            if [[ -z "$Course" ]]; then
+                continue
+            fi
+
+            CreditHours=$(echo "$Course" | grep -o '{[^}]*}' | tr -d '{}')
+            CourseName=$(echo "$Course" | sed 's/(.*)//g' | sed 's/{.*}//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
+
+            if [[ "$Course" =~ \[(.*)\] ]]; then
+                Grade=$(echo "$Course" | grep -o '\[[^]]*\]' | tr -d '[]')
+
+                printf "%-20s %-8s %-8s\n" "$CourseName" "$Grade" "$CreditHours"
+            fi
+        done
+
+        echo "----------------------------------------"
+    else
+        echo "Roll Number $RollNumber not found."
+    fi
+fi
+    read -p "Press Enter to continue..."
+}
+#!/bin/bash
+
+# File to store user credentials
+CREDENTIALS_FILE="credentials.txt"
+
+touch "$CREDENTIALS_FILE"  # Credentials file
+
+
+
+#-------------------------------------------- REGISTER THE USER --------------------------------------------------
+function Register_User()
+{
+    echo "Register as a $1"
+    read -p "Enter ID: " user_id
+    read -s -p "Enter Password: " password
+    echo
+    echo "$user_id:$password:$1" >> "$CREDENTIALS_FILE"
+    echo "Registration successful!"
+}
+
+
+#-------------------------------------------- LOGIN THE USER --------------------------------------------------------
+function Login_User()
+{
+    echo "Login as a $1"
+    read -p "Enter ID: " user_id
+       RollNumber="$user_id";
+   read -s -p "Enter Password: " password
+    echo
+
+    while IFS=: read -r stored_id stored_pass stored_role; do
+        if [[ "$stored_id" == "$user_id" && "$stored_pass" == "$password" && "$stored_role" == "$1" ]]; then
+            echo "Login successful!"
+            return 0
+        fi
+    done < "$CREDENTIALS_FILE"
+
+    echo "Invalid credentials!"
+
+    return 1
+}
+
+#---------------------------------------------- TEACHER'S MENU ----------------------------------------------------
+function TeacherMenu()
+{
+    while true; do
+        clear
+        echo "===== Student Management System ====="
+        echo "1. Add Student"
+        echo "2. Add Courses for Student"
+        echo "3. Assign Marks for Student"
+        echo "4. Calculate Grades"
+        echo "5. Calculate CGPA"
+        echo "6. List Passed Students"
+        echo "7. List Failed Students"
+        echo "8. List Students (Ascending)"
+        echo "9. List Students (Descending)"
+        echo "10. Delete Student Record"
+        echo "11. Exit"
+        read -p "Choose an option: " choice
+
+        case $choice in
+            1) AddStudent ;;
+            2) AddCoursesForStudent ;;
+            3) AssignMarksForStudent ;;
+            4) CalculateGrades ;;
+            5) CalculateCGPA ;;
+            6) ListPassedStudents ;;
+            7) ListFailedStudents ;;
+            8) ListStudentAscending ;;
+            9) ListStudentDescending ;;
+            10) DeleteRecord ;;
+            11) exit 0 ;;
+            *)
+               echo "Invalid option. Press Enter to continue..."
+               read
+               ;;
+        esac
+    done
+}
+
+#------------------------------------------- STUDENT'S MENU ----------------------------------------------------------
+Student_Menu()
+{
+    while true; do
+        clear
+        echo "===== Student Management System ====="
+        echo "1. View CoursesGrade"
+        echo "2. View CGPA"
+        echo "3. Exit"
+        read -p "Choose an option: " choice
+
+        case $choice in
+            1) DisplayCoursesAndGrades ;;
+            2) DisplayCGPA ;;  # Fixed function name
+            3) exit 0 ;;
+            *)
+               echo "Invalid option. Press Enter to continue..."
+               read
+               ;;
+        esac
+    done
+}
+
+# Main script
+echo "Are you a Teacher or Student? (T/S)"
+read role_choice
+
+if [[ "$role_choice" == "T" || "$role_choice" == "t" ]]; then
+    role="Teacher"
+elif [[ "$role_choice" == "S" || "$role_choice" == "s" ]]; then
+    role="Student"
+else
+    echo "Invalid choice. Exiting."
+    exit 1
+fi
+
+# Ask to login or register
+echo "Do you want to (L)ogin or (R)egister? (L/R)"
+read action
+
+if [[ "$action" == "R" || "$action" == "r" ]]; then
+    Register_User "$role"
+elif [[ "$action" == "L" || "$action" == "l" ]]; then
+    if Login_User "$role"; then
+        if [[ "$role" == "Teacher" ]]; then
+            TeacherMenu
+        else
+            Student_Menu
+        fi
+    fi
+else
+    echo "Invalid choice. Exiting."
+    exit 1
+fi
