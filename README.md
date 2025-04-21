@@ -1,44 +1,61 @@
-<h1>Student Management System-Bash Scripting</h1>
-<hr><p>A simple command-line Student Management System for efficiently handling student records, grades, and reports. Designed for easy use and data persistence.</p><ul>
-<li>The Student Management System (SMS) addresses the inefficiencies in manual student record management by:</li>
+<h1>🎓 Student Management System – Bash Scripting</h1>
+<hr>
+<p>A simple yet powerful <strong>command-line Student Management System</strong> built using 🐧 <strong>Bash scripting</strong>. Designed to efficiently manage student records, grades, and reports, this system offers digital convenience, accuracy, and long-term data persistence 💾.</p>
+
+<h2>📌 Problem Statement</h2>
+<hr>
+<ul>
+  <li>🗂️ <strong>Eliminates Paperwork:</strong> Digital storage reduces reliance on physical documents.</li>
+  <li>✅ <strong>Minimizes Human Errors:</strong> Automates grading and CGPA calculation.</li>
+  <li>🚀 <strong>Boosts Accessibility:</strong> Teachers and students can easily access and update records.</li>
+  <li>📁 <strong>Improves Organization:</strong> Prevents loss of information through structured data handling.</li>
+  <li>⏱️ <strong>Saves Time:</strong> Automates repetitive tasks like sorting, grading, and report generation.</li>
 </ul>
-<p>Eliminating paperwork – Digital storage reduces the need for physical records.</p>
-<p>Reducing human errors – Automates grading and CGPA calculations to ensure accuracy.</p>
-<p>Improving accessibility – Teachers and students can quickly access and update records.</p>
-<p>Enhancing organization – Structured data storage prevents loss of information.</p>
-<p>Saving time – Automates repetitive tasks like sorting, grading, and report generation.</p>
-<p>This system simplifies student record handling, making academic management more efficient.</p><ul>
-<li>The Student Management System (SMS) is designed to streamline student record management for educational institutions. It aims to:</li>
+
+<h2>🎯 Project Objectives</h2>
+<hr>
+<ul>
+  <li>🧾 Simplify administrative tasks with easy student record management (add, update, retrieve).</li>
+  <li>🧮 Automate grading and CGPA calculations to improve accuracy.</li>
+  <li>👨‍🎓 Allow students to access their academic performance easily.</li>
+  <li>🔒 Ensure data persistence by securely storing student records for future use.</li>
 </ul>
-<p>Simplify administrative tasks by allowing easy addition, updating, and retrieval of student records.</p>
-<p>Automate grading and CGPA calculation to reduce manual effort and errors.</p>
-<p>Provide students with access to their academic progress, ensuring transparency.</p>
-<p>Ensure data persistence by securely storing records for future reference.</p>
-<p>This project enhances efficiency and organization in student management through a simple, command-line interface.</p><h2>Technologies Used</h2>
-<hr><ul>
-<li>Bash Scripting</li>
-</ul><h2>Features</h2>
-<hr><ul>
-<li>Add &amp; Update Students</li>
-</ul><ul>
-<li>View Student Details</li>
-</ul><ul>
-<li>Assign Marks &amp; Calculate Grades</li>
-</ul><ul>
-<li>Generate Reports</li>
-</ul><ul>
-<li>Student Login</li>
-</ul><ul>
-<li>Teacher Login</li>
-</ul><ul>
-<li>Data Persistence</li>
-</ul><ul>
-<li>View Grades</li>
-</ul><ul>
-<li>View CGPA</li>
-</ul><h2>Project Status</h2>
-<hr><p>Completed</p><ul>
-<li>Heartfelt Thanks to Mr. Luqman Waseem!</li>
+
+<h2>⚙️ Technologies Used</h2>
+<hr>
+<ul>
+  <li>🐚 Bash Scripting</li>
 </ul>
-<p>I am truly grateful for your support, guidance, and valuable insights throughout this project. Your encouragement and mentorship have been instrumental in our learning journey. Thank you for your time and dedication!</p><h2>Contact</h2>
-<hr><p><span style="margin-right: 30px;"></span><a href="https://www.linkedin.com/in/syed-ayaan-hassan-shah-4993a532a/"><img target="_blank" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" style="width: 10%;"></a><span style="margin-right: 30px;"></span><a href="https://github.com/AyaanHassanShah/Ayaan-Hassan-Shah"><img target="_blank" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" style="width: 10%;"></a></p>
+
+<h2>✨ Features</h2>
+<hr>
+<ul>
+  <li>➕ Add &amp; Update Students</li>
+  <li>🔍 View Student Details</li>
+  <li>📝 Assign Marks &amp; Calculate Grades</li>
+  <li>📄 Generate Reports</li>
+  <li>👨‍🎓 Student Login</li>
+  <li>👩‍🏫 Teacher Login</li>
+  <li>💾 Data Persistence</li>
+  <li>📊 View Grades</li>
+  <li>📈 View CGPA</li>
+</ul>
+
+<h2>🚀 Project Status</h2>
+<hr>
+<p><strong>✅ Completed</strong></p>
+<ul>
+  <li>🙏 <strong>Heartfelt Thanks to Mr. Luqman Waseem!</strong></li>
+</ul>
+<p>I am truly grateful for your mentorship, support, and valuable insights throughout this project. Your guidance was instrumental in completing this project successfully! 🤝</p>
+
+<h2>📬 Contact</h2>
+<hr>
+<p>
+  <a href="https://www.linkedin.com/in/syed-ayaan-hassan-shah-4993a532a/" target="_blank">
+    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" style="width: 40px; margin-right: 20px;" />
+  </a>
+  <a href="https://github.com/AyaanHassanShah/Ayaan-Hassan-Shah" target="_blank">
+    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" style="width: 40px;" />
+  </a>
+</p>
