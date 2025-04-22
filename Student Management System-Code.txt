@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Ensure the Students.txt file exists
 clear
 RollNumber=""
 
@@ -94,11 +93,20 @@ function AddCoursesForStudent() {
         CurrentCourses=$(grep "| $RollNumber |" Students.txt | awk -F'|' '{print $NF}')
         CurrentCourses=$(echo "$CurrentCourses" | sed 's/^ *//;s/ *$//')
         
-        echo "Enter courses one by one. Type 'done' when finished."
+        echo "Enter courses one by one. Type 'Done' when finished."
         UpdatedCourses=""
         while true; do
-            read -p "Enter Course: " Course
-            if [[ "$Course" == "done" ]]; then
+              while true; do
+                read -p "Enter the Name of Course: " Course
+                if [[ $Course =~ ^[a-zA-Z]+(\ [a-zA-Z]+)*$ ]]; then 
+                    break
+                else
+                    echo "Invalid Course Name!! Try again"
+                fi
+            done
+
+           # read -p "Enter Course: " Course
+            if [[ "$Course" == "Done" ]]; then
                 break
             fi
             read -p "Enter Credit Hours for $Course: " CreditHours
@@ -135,7 +143,6 @@ function AssignMarksForStudent() {
         CurrentRecord=$(grep "| $RollNumber |" Students.txt)
         echo "Student found!"
         
-        # Extract courses correctly - get the last field and remove trailing spaces and |
         Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $5}' | sed 's/^ *//;s/ *|*$//')
         
         if [[ -z "$Courses" ]]; then
@@ -159,7 +166,6 @@ function AssignMarksForStudent() {
                 continue
             fi
             
-            # Extract course name and credit hours (remove any existing marks)
             if [[ "$Course" =~ \{([0-9])\} ]]; then
                 CreditHours=$(echo "$Course" | grep -o '{[^}]*}' | tr -d '{}')
                 CourseName=$(echo "$Course" | sed 's/{.*}//g' | sed 's/(.*)//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
@@ -168,9 +174,18 @@ function AssignMarksForStudent() {
                 CreditHours=""
             fi
             
-            echo "Enter marks for: $CourseName"
-            read -p "Marks: " Marks
+
             
+	while true; do
+                read -p "Enter the Marks for $CourseName: " Marks
+                if [[ $Marks =~ ^[0-9]{2}$ ]]; then
+                        break
+                else
+                    echo "Invalid Marks! Must have Numbers (0-9). Try again."
+                fi
+            done
+
+
             # Add to updated courses
             if [[ -z "$UpdatedCourses" ]]; then
                 if [[ -n "$CreditHours" ]]; then
@@ -526,13 +541,15 @@ function ListStudentDescending() {
     read -p "Press Enter to continue..."
 }
 
-function DisplayCGPA() {
+function DisplayCGPA()
+{
     clear
-    InputRollNo
+    if [[ Login_User ]]; then
+
 
     if grep -q "| $RollNumber |" Students.txt; then
         CurrentRecord=$(grep "| $RollNumber |" Students.txt)
-        
+
         if [[ "$CurrentRecord" =~ CGPA:([0-9]+\.[0-9]+) ]]; then
             CGPA="${BASH_REMATCH[1]}"
             echo "----------------------------------------"
@@ -546,15 +563,18 @@ function DisplayCGPA() {
         echo "Roll Number $RollNumber not found."
     fi
     read -p "Press Enter to continue..."
+ fi
+
 }
 
-function DisplayCoursesAndGrades() {
+function DisplayCoursesAndGrades()
+{
  clear
-    InputRollNo
-    
+    if [[ Login_User ]]; then
+
     if grep -q "| $RollNumber |" Students.txt; then
         CurrentRecord=$(grep "| $RollNumber |" Students.txt)
-        Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $8}' | sed 's/^ *//;s/ *|*$//')
+        Courses=$(echo "$CurrentRecord" | awk -F'|' '{print $8}' | sed 's/^ //;s/ *|$//')
 
         if [[ -z "$Courses" ]]; then
             echo "No courses found for this student."
@@ -576,7 +596,7 @@ function DisplayCoursesAndGrades() {
             fi
 
             CreditHours=$(echo "$Course" | grep -o '{[^}]*}' | tr -d '{}')
-            CourseName=$(echo "$Course" | sed 's/(.*)//g' | sed 's/{.*}//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
+            CourseName=$(echo "$Course" | sed 's/(.)//g' | sed 's/{.}//g' | sed 's/\[.*\]//g' | sed 's/^ *//;s/ *$//')
 
             if [[ "$Course" =~ \[(.*)\] ]]; then
                 Grade=$(echo "$Course" | grep -o '\[[^]]*\]' | tr -d '[]')
@@ -589,14 +609,17 @@ function DisplayCoursesAndGrades() {
     else
         echo "Roll Number $RollNumber not found."
     fi
+fi
     read -p "Press Enter to continue..."
 }
+
+
 #!/bin/bash
 
 # File to store user credentials
 CREDENTIALS_FILE="credentials.txt"
 
-touch "$CREDENTIALS_FILE"  # Ensure the credentials file exists
+touch "$CREDENTIALS_FILE"  
 
 # Function to register a user
 function Register_User() {
@@ -621,19 +644,22 @@ fi
 }
 
 # Function to log in a user
-function Login_User() {
+
+function Login_User()
+{
     echo "Login as a $1"
     read -p "Enter ID: " user_id
-    read -s -p "Enter Password: " password
+       RollNumber="$user_id";
+   read -s -p "Enter Password: " password
     echo
-    
+
     while IFS=: read -r stored_id stored_pass stored_role; do
         if [[ "$stored_id" == "$user_id" && "$stored_pass" == "$password" && "$stored_role" == "$1" ]]; then
             echo "Login successful!"
             return 0
         fi
     done < "$CREDENTIALS_FILE"
-    
+
     echo "Invalid credentials!"
 
     return 1
@@ -643,7 +669,7 @@ function Login_User() {
 function TeacherMenu() {
     while true; do
         clear
-        echo "===== Student Management System ====="
+        echo "========= Student Management System ==========="
         echo "1. Add Student"
         echo "2. Add Courses for Student"
         echo "3. Assign Marks for Student"
@@ -712,6 +738,7 @@ else
     exit 1
 fi
 
+
 # Ask to login or register
 echo "Do you want to (L)ogin or (R)egister? (L/R)"
 read action
@@ -729,4 +756,5 @@ elif [[ "$action" == "L" || "$action" == "l" ]]; then
 else
     echo "Invalid choice. Exiting."
     exit 1
-fi
+ fi
+
