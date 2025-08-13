@@ -74,7 +74,7 @@
 <hr>
 <p><strong>✅ Completed</strong></p>
 <ul>
-  <li>🙏 <strong>Heartfelt Thanks to Mr. Luqman Waseem and <span style="color: #007bff;">ChatGPT (OpenAI)</span>!</strong></li>
+  <li>🙏 <strong>Heartfelt Thanks to Mr. Luqman Waseem </strong></li>
 </ul>
 <p>I am truly grateful for your mentorship, support, and valuable insights throughout this project. Your guidance was instrumental in completing this project successfully! 🤝</p>
 
